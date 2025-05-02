@@ -20,7 +20,7 @@ def train_one_epoch(
     dataloader: DataLoader,
     optimizer: Optimizer,
     device: torch.device,
-    beta: float = 1.0
+    beta: float = 0.1
 ) -> float:
     """
     Run one training epoch for a VAE.
@@ -46,6 +46,7 @@ def train_one_epoch(
         x_hat, mu, logvar = model(x_aug)
         loss = vae_loss(x_hat, x_clean, mu, logvar, beta=beta)
         loss.backward()
+        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=5.0)
         optimizer.step()
 
         total_loss += loss.item()
@@ -60,17 +61,27 @@ def train(
     batch_size: int = 8,
     lr: float = 1e-3,
     beta: float = 1.0,
+    device: torch.device = torch.device("cpu"),
     output_dir: Path = Path("outputs")
-) -> None:
+    ) -> None:
     """
     Full training loop for the VAE model.
     """
     device = get_best_device()
     output_dir.mkdir(parents=True, exist_ok=True)
+    
+    print(f"[INFO] Device: {device}")
+    print(f"[INFO] Output directory: {output_dir.resolve()}")
 
     # Load and parse data
     file_paths, labels, _, lengths = parse_dataset(data_path)
+    print(f"[INFO] Found {len(file_paths)} files")
+    print(f"[INFO] Found {len(set(labels))} unique labels")
+    print(f"[INFO] Longest file length: {max(lengths)} samples")
     output_len = int(max(lengths) * 1.1)
+    input_shape = (32, output_len) 
+    print(f"[INFO] Computed output_len: {output_len}")
+    print(f"[INFO] Input shape to VAE: {input_shape}")
 
     transform = WaveletHilbertTransform(output_len=output_len)
     augment = AugmentationPipeline(pitch_shift=True, partial_dropout=True, time_mask=True, freq_mask=True)

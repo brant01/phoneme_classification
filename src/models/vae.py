@@ -51,4 +51,26 @@ class VAE(nn.Module):
         mu, logvar = self.encoder(x)
         z = self.reparameterize(mu, logvar)
         x_hat = self.decoder(z)
+        # Crop or pad x_hat to match x
+        x_hat = self._match_output_length(x_hat, x)
+        if torch.isnan(mu).any() or torch.isnan(logvar).any():
+            print("[WARN] NaNs in latent parameters")
+        if torch.isnan(x_hat).any():
+            print("[WARN] NaNs in reconstruction")
         return x_hat, mu, logvar
+    
+    def _match_output_length(self, x_hat: torch.Tensor, x_target: torch.Tensor) -> torch.Tensor:
+        """
+        Ensure x_hat matches x_target length along time axis (dim=3).
+        If mismatch is small, crop or pad x_hat.
+        """
+        T_out = x_hat.shape[-1]
+        T_target = x_target.shape[-1]
+
+        if T_out > T_target:
+            return x_hat[..., :T_target]
+        elif T_out < T_target:
+            pad_amount = T_target - T_out
+            return torch.nn.functional.pad(x_hat, (0, pad_amount), mode='constant', value=0.0)
+        else:
+            return x_hat

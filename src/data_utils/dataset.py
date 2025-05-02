@@ -65,6 +65,9 @@ class PhonemeDataset(Dataset):
         if sr != self.sample_rate:
             resampler = torchaudio.transforms.Resample(orig_freq=sr, new_freq=self.sample_rate)
             waveform = resampler(waveform)
+            
+        # normalize waveform
+        waveform = (waveform - waveform.mean()) / (waveform.std() + 1e-6)
 
         # Get clean features (always used as target)
         clean_features = self.transform(waveform)
