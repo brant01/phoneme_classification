@@ -3,7 +3,7 @@ import torch
 from torch import optim
 from torch.utils.data import DataLoader
 
-from experiment.exp_params import ExpParams
+from src.experiment.exp_params import ExpParams
 from models.vae import VAE
 from models.losses import vae_loss
 from data_utils.dataset import PhonemeDataset

@@ -70,11 +70,7 @@ class Experiment:
 
         # Store all for reuse
         self._parsed_data = (file_paths, labels, label_map, lengths)
-
-        # Pass to training
-        train(self.params, device=self.device, parsed_data=self._parsed_data)
-        
         
         self.logger.info("Starting training...")
-        train(self.params, device=self.device)  
+        train(self.params, device=self.device, parsed_data=self._parsed_data)
         self.logger.info("Training completed.")
