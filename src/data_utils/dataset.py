@@ -19,26 +19,17 @@ class PhonemeDataset(Dataset):
         self,
         file_paths: list[Path],
         labels: list[int],
-        augment: bool = True,
+        transform: Callable[[Tensor], Tensor],
+        augment: bool = False,
+        augmentation: Optional[Callable[[Tensor, Tensor], Tensor]] = None,
         sample_rate: int = 16000,
-        transform: Optional[Callable[[Tensor], Tensor]] = None,
-        augmentation: Optional[Callable[[Tensor], Tensor]] = None,
-        ) -> None:
-        """
-        Args:
-            file_paths (List[Path]): List of .wav file paths.
-            labels (List[int]): Integer phoneme labels.
-            augment (bool): Whether to apply data augmentation.
-            sample_rate (int): Target sample rate for audio.
-            transform (Callable): Preprocessing transform (e.g., wavelet + hilbert).
-            augmentation (Callable): Augmentation transform (e.g., masking, pitch shift).
-        """
+    ):
         self.file_paths = file_paths
         self.labels = labels
-        self.augment = augment
-        self.sample_rate = sample_rate
         self.transform = transform
+        self.augment = augment
         self.augmentation = augmentation
+        self.sample_rate = sample_rate
         
     def __len__(self) -> int:
         return len(self.file_paths)

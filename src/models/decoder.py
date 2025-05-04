@@ -1,4 +1,3 @@
-
 import torch
 import torch.nn as nn
 
@@ -10,24 +9,32 @@ class Decoder(nn.Module):
     Output: [B, 2, F, T]
     """
 
-    def __init__(self, 
-                 latent_dim: int, 
-                 output_shape: tuple[int, int], 
-                 ) -> None:
+    def __init__(self,
+                 input_shape: tuple[int, int],
+                 in_channels: int,
+                 latent_dim: int) -> None:
         """
         Args:
-            latent_dim (int): Latent dimension
-            output_shape (tuple): Target output shape (num_scales, time_steps)
+            input_shape (tuple): (F, T) shape of output features
+            in_channels (int): Number of output channels (usually 2 for real + phase)
+            latent_dim (int): Dimension of latent space
         """
         super().__init__()
-        self.output_shape = output_shape
+        self.input_shape = input_shape
+        self.in_channels = in_channels
         self.latent_dim = latent_dim
 
-        # Reverse of encoder flattening size
+        # Projected spatial size after deconv (assume 4x downsampling per Conv2D layer in encoder)
         self.projected_channels = 256
-        self.projected_shape = (self.projected_channels, output_shape[0] // 16, output_shape[1] // 16)
+        F, T = input_shape
+        self.projected_shape = (
+            self.projected_channels,
+            F // 16,
+            T // 16,
+        )
         flattened_size = self.projected_channels * self.projected_shape[1] * self.projected_shape[2]
 
+        # Fully connected to go from latent space to projected feature map
         self.fc = nn.Linear(latent_dim, flattened_size)
 
         self.decoder = nn.Sequential(
@@ -43,21 +50,19 @@ class Decoder(nn.Module):
             nn.BatchNorm2d(32),
             nn.ReLU(),
 
-            nn.ConvTranspose2d(32, 2, kernel_size=4, stride=2, padding=1),
-            nn.Tanh()  # output in range [-1, 1]; adjust if needed
+            nn.ConvTranspose2d(32, self.in_channels, kernel_size=4, stride=2, padding=1),
+            nn.Tanh()  # Optional: adjust depending on output normalization
         )
 
     def forward(self, z: torch.Tensor) -> torch.Tensor:
         """
-        Forward pass through decoder.
-
         Args:
-            z (Tensor): Latent vector [B, latent_dim]
+            z (Tensor): Latent code [B, latent_dim]
 
         Returns:
-            Tensor: Reconstructed features [B, 2, F, T]
+            Tensor: Decoded features [B, in_channels, F, T]
         """
-        x = self.fc(z)  # [B, flattened_size]
+        x = self.fc(z)
         x = x.view(-1, *self.projected_shape)
         x = self.decoder(x)
         return x

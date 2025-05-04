@@ -50,7 +50,7 @@ class WaveletHilbertTransform:
 
         combined = torch.stack([wavelet_tensor, hilbert_repeated], dim=0)  # [2, num_scales, T]
 
-        return combined
+        return torch.tanh(combined)
 
     def _pad(self, x: Tensor) -> Tensor:
         T = x.shape[0]

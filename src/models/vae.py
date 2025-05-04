@@ -11,17 +11,10 @@ class VAE(nn.Module):
     Variational Autoencoder composed of encoder, reparameterization, and decoder.
     """
 
-    def __init__(self, input_shape: tuple[int, int], latent_dim: int):
-        """
-        Args:
-            input_shape (tuple): (num_scales, output_len)
-            latent_dim (int): Dimension of latent space
-        """
+    def __init__(self, input_shape: tuple[int, int], in_channels: int, latent_dim: int) -> None:
         super().__init__()
-        self.latent_dim = latent_dim
-
-        self.encoder = Encoder(in_channels=2, input_shape=input_shape, latent_dim=latent_dim)
-        self.decoder = Decoder(latent_dim=latent_dim, output_shape=input_shape)
+        self.encoder = Encoder(input_shape=input_shape, in_channels=in_channels, latent_dim=latent_dim)
+        self.decoder = Decoder(input_shape=input_shape, in_channels=in_channels, latent_dim=latent_dim)
 
     def reparameterize(self, mu: torch.Tensor, logvar: torch.Tensor) -> torch.Tensor:
         """
@@ -49,6 +42,9 @@ class VAE(nn.Module):
             Tuple: (reconstructed x̂, mu, logvar)
         """
         mu, logvar = self.encoder(x)
+        
+        logvar = torch.clamp(logvar, min=-10.0, max=10.0)
+        
         z = self.reparameterize(mu, logvar)
         x_hat = self.decoder(z)
         # Crop or pad x_hat to match x
