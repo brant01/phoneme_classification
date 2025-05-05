@@ -69,6 +69,7 @@ class Experiment:
         self.params.input_shape = (2, 32, output_len)
 
         # Store all for reuse
+        file_paths, labels, label_map, lengths = parse_dataset(self.params.data_path)
         self._parsed_data = (file_paths, labels, label_map, lengths)
         
         self.logger.info("Starting training...")

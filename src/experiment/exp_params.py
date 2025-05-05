@@ -29,8 +29,8 @@ class ExpParams:
     
     # Execution 
     device: str = "auto" # "cpu", "cuda", "mps", or "auto"
-    verbose: bool = False
-    seed: int = 42
+    #verbose: bool = False
+    #seed: int = 42
     
     def to_dict(self) -> dict:
         """

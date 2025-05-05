@@ -34,42 +34,29 @@ class PhonemeDataset(Dataset):
     def __len__(self) -> int:
         return len(self.file_paths)
     
-    def __getitem__(self, idx: int) -> tuple[Tensor, Tensor, int]:
+    def __getitem__(self, index: int) -> tuple[Tensor, Tensor, int, str]:
         """
-        Return an augmented sample from the dataset.
-
-        Returns:
-            Tuple:
-                - augmented features (Tensor)
-                - clean features (Tensor)
-                - integer phoneme label (int)
+        Return a tuple of (augmented_features, clean_features, label_index, filename)
         """
-        file_path: Path = self.file_paths[idx]
-        label: int = self.labels[idx]
+        file_path = self.file_paths[index]
+        label_idx = self.labels[index]
 
-        # Load waveform
-        waveform, sr = torchaudio.load(str(file_path))
-        waveform = waveform.mean(dim=0) if waveform.ndim > 1 else waveform  # convert to mono
-        waveform = waveform.squeeze(0) if waveform.ndim > 1 else waveform
+        waveform, sr = torchaudio.load(str(file_path))  # waveform: [1, T] or [channels, T]
 
-        # Resample if needed
-        if sr != self.sample_rate:
-            resampler = torchaudio.transforms.Resample(orig_freq=sr, new_freq=self.sample_rate)
-            waveform = resampler(waveform)
-            
-        # normalize waveform
-        waveform = (waveform - waveform.mean()) / (waveform.std() + 1e-6)
+        if waveform.shape[0] == 1:
+            waveform = waveform.expand(2, -1)
 
-        # Get clean features (always used as target)
+        if self.sample_rate and sr != self.sample_rate:
+            waveform = torchaudio.functional.resample(waveform, sr, self.sample_rate)
+
         clean_features = self.transform(waveform)
 
-        # Apply augmentation to get training input
         if self.augment and self.augmentation:
-            augmented_features = self.augmentation(waveform, clean_features, sample_rate=self.sample_rate)
+            _, augmented_features = self.augmentation(waveform, clean_features)
         else:
-            augmented_features = clean_features
+            augmented_features = clean_features.clone()
 
-        return augmented_features, clean_features, label
+        return augmented_features, clean_features, label_idx, str(file_path)
     
 if __name__ == "__main__":
     

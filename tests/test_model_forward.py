@@ -9,7 +9,7 @@ def test_vae_forward_pass():
     x = torch.randn(batch_size, 2, *input_shape)  # shape: [B, 2, F, T]
 
     # Instantiate model
-    model = VAE(input_shape=input_shape, latent_dim=latent_dim)
+    model = VAE(input_shape=input_shape, in_channels=2, latent_dim=latent_dim)
 
     # Forward pass
     x_hat, mu, logvar = model(x)

@@ -2,7 +2,7 @@ from pathlib import Path
 from data_utils.loader import parse_dataset
 from data_utils.dataset import PhonemeDataset
 from data_utils.transform import WaveletHilbertTransform
-import torch
+
 
 def test_dataset_getitem():
     data_path = Path("data/New Stimuli 9-8-2024")
@@ -13,11 +13,11 @@ def test_dataset_getitem():
 
     dataset = PhonemeDataset(file_paths, labels, transform=transform, augment=False)
 
-    x_aug, x_clean, label = dataset[0]
+    x_aug, x_clean, label, filename = dataset[0]  # UPDATED to unpack 4 values
 
-    assert isinstance(x_aug, torch.Tensor)
-    assert isinstance(x_clean, torch.Tensor)
+    assert x_aug.shape == x_clean.shape
     assert isinstance(label, int)
+    assert isinstance(filename, str)
 
     assert x_aug.shape == x_clean.shape
     assert x_aug.ndim == 3   # [2, num_scales, T]

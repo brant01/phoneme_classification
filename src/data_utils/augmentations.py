@@ -3,8 +3,8 @@ In-memory data augmentation pipeline for waveform and feature tensors.
 """
 
 from torch import Tensor
+import torch
 import torchaudio
-import random
 
 # --- Internal waveform-level augmentations ---
 class WaveformAugmenter:
@@ -15,9 +15,9 @@ class WaveformAugmenter:
 
     def __call__(self, waveform: Tensor, sample_rate: int = 16000) -> Tensor:
         if self.pitch_shift:
-            semitones = random.uniform(-2, 2)
+            semitones = torch.empty(1).uniform_(-2, 2).item()
             waveform = self._pitch_shift(waveform, sample_rate, semitones)
-        if self.partial_dropout and random.random() < self.dropout_prob:
+        if self.partial_dropout and torch.rand(1).item() < self.dropout_prob:
             waveform = self._partial_dropout(waveform)
         return waveform
 
@@ -31,7 +31,7 @@ class WaveformAugmenter:
     def _partial_dropout(self, waveform: Tensor) -> Tensor:
         T = waveform.shape[0]
         drop_len = int(T * 0.2)
-        start = random.randint(0, T - drop_len)
+        start = torch.randint(low=0, high=T - drop_len, size=(1,)).item()
         waveform[start:start + drop_len] = 0.0
         return waveform
 
@@ -55,14 +55,14 @@ class FeatureAugmenter:
     def _apply_time_mask(self, x: Tensor) -> Tensor:
         _, _, T = x.shape
         width = int(T * self.time_width)
-        start = random.randint(0, max(0, T - width))
+        start = torch.randint(low=0, high=max(0, T - width), size=(1,)).item()
         x[:, :, start:start + width] = 0.0
         return x
 
     def _apply_freq_mask(self, x: Tensor) -> Tensor:
         _, F, _ = x.shape
         width = int(F * self.freq_width)
-        start = random.randint(0, max(0, F - width))
+        start = torch.randint(low=0, high=max(0, F - width), size=(1,)).item()
         x[:, start:start + width, :] = 0.0
         return x
 
@@ -89,19 +89,17 @@ class AugmentationPipeline:
         self.feature_aug = FeatureAugmenter(time_mask=time_mask,
                                             freq_mask=freq_mask)
 
-    def __call__(self, waveform: Tensor, features: Tensor, sample_rate: int = 16000) -> Tensor:
-        if random.random() > self.prob:
-            return features  # skip all augmentation
+    def __call__(self, waveform: Tensor, features: Tensor) -> tuple[Tensor, Tensor]:
+        """
+        Apply waveform and feature augmentations and return both.
 
-        # Apply waveform augmentations
-        augmented_waveform = self.waveform_aug(waveform.clone(), sample_rate=sample_rate)
+        Returns:
+            waveform_aug: Augmented waveform
+            features_aug: Augmented features
+        """
+        if torch.rand(1).item() > self.prob:
+            return waveform, features  # no change
 
-        # Re-transform into features
-        from data_utils.transform import WaveletHilbertTransform  # safe import
-        transform = WaveletHilbertTransform(output_len=features.shape[-1])
-        transformed = transform(augmented_waveform)
-
-        # Apply feature-level augmentations
-        augmented_features = self.feature_aug(transformed)
-
-        return augmented_features
+        waveform_aug = self.waveform_aug(waveform)
+        features_aug = self.feature_aug(features)
+        return waveform_aug, features_aug
