@@ -17,7 +17,7 @@ if __name__ == "__main__":
         log_dir=Path("logs"),
         epochs=1,
         batch_size=4,
-        latent_dim=8,
+        latent_dim=2,
         learning_rate=1e-3,
         beta=1.0,
         use_pitch_shift=True,
