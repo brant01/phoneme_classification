@@ -33,7 +33,7 @@ def save_config(params: ExpParams,
     with open(path, "w") as f:
         json.dump(params.to_dict(), f, indent=2)
         
-def save_loss_history(losses: dict[str, list[float]], save_path: Path) -> None:
+def save_loss_history(losses: dict[str, list], save_path: Path) -> None:
     keys = list(losses.keys())
     max_len = max(len(v) for v in losses.values())
     
@@ -46,6 +46,5 @@ def save_loss_history(losses: dict[str, list[float]], save_path: Path) -> None:
                 if i < len(losses[key]):
                     row.append(losses[key][i])
                 else:
-                    row.append("")  # or None or 0.0 depending on preference
+                    row.append(0)  # or None or 0.0 depending on preference
             writer.writerow(row)
-    
