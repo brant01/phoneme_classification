@@ -20,7 +20,7 @@ if __name__ == "__main__":
         data_path=Path("data/New Stimuli 9-8-2024"),
         output_dir=Path("outputs"),
         log_dir=Path("logs"),
-        epochs=5,
+        epochs=2,
         batch_size=4,
         latent_dim=3,
         learning_rate=1e-3,
