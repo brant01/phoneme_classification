@@ -1,3 +1,4 @@
+import multiprocessing
 import torch
 from torch import optim
 from torch.utils.data import DataLoader
@@ -63,11 +64,17 @@ def train(params: ExpParams,
         sample_rate=16000,
     )
 
+    cpu_count = multiprocessing.cpu_count()
+    num_workers = max(1, min(8, cpu_count // 2))
+    logger.info(f"System has {cpu_count} CPUs, using {num_workers} DataLoader workers")
+    
     dataloader = DataLoader(
         dataset,
         batch_size=params.batch_size,
         shuffle=True,
-        num_workers=0
+        num_workers = num_workers,
+        pin_memory=True,
+        persistent_workers=(num_workers > 0)
     )
 
     # --------------------------
@@ -89,7 +96,7 @@ def train(params: ExpParams,
     # --------------------------
     # Training loop
     # --------------------------
-    torch.autograd.set_detect_anomaly(True)
+    #torch.autograd.set_detect_anomaly(True)
 
     train_losses = []
     val_losses = []  # for future use

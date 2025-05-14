@@ -14,6 +14,7 @@ class ExpParams:
     data_path: Path 
     output_dir: Path = Path("outputs")
     log_dir: Path = Path("logs")
+    target_sr: int = 16000  # Target sample rate for audio files
     
     # Model
     input_shape: tuple[int, int] = (32, 16000)  # (channels, time)

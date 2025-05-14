@@ -30,36 +30,30 @@ class WaveletHilbertTransform:
         - [0]: wavelet transform (power)
         - [1]: Hilbert transform (amplitude envelope repeated across scales)
         """
+        orig_device = waveform.device
         waveform = self._pad(waveform)
 
-        # Handle 1D (assume mono) and 2D (assume [channels, T]) inputs
         if waveform.ndim == 1:
-            x = waveform.numpy()
+            x = waveform.cpu().numpy()
         elif waveform.ndim == 2:
-            x = waveform[0].numpy()  # Use first channel
+            x = waveform[0].cpu().numpy()
         else:
             raise ValueError(f"Expected 1D or 2D input, got shape {waveform.shape}")
 
-        # Wavelet transform
         scales = np.arange(1, self.num_scales + 1)
         coeffs, _ = pywt.cwt(x, scales, self.wavelet)
-        power = np.abs(coeffs)  # [num_scales, T_wavelet]
+        power = np.abs(coeffs)
 
-        # Hilbert envelope
-        envelope = np.abs(hilbert(x))  # [T_wavelet]
+        envelope = np.abs(hilbert(x))
 
-        # Convert to torch tensors
         wavelet_tensor = torch.from_numpy(power).float()
-        hilbert_tensor = torch.from_numpy(envelope).float().unsqueeze(0)  # [1, T]
+        hilbert_tensor = torch.from_numpy(envelope).float().unsqueeze(0)
 
-        # Normalize
         wavelet_tensor = (wavelet_tensor - wavelet_tensor.mean()) / (wavelet_tensor.std() + 1e-6)
         hilbert_tensor = (hilbert_tensor - hilbert_tensor.mean()) / (hilbert_tensor.std() + 1e-6)
 
-        # Expand envelope across frequency axis
-        hilbert_repeated = hilbert_tensor.repeat(self.num_scales, 1)  # [num_scales, T]
+        hilbert_repeated = hilbert_tensor.repeat(self.num_scales, 1)
 
-        # Ensure fixed length output
         current_len = wavelet_tensor.shape[-1]
         if current_len < self.output_len:
             pad = self.output_len - current_len
@@ -69,9 +63,9 @@ class WaveletHilbertTransform:
             wavelet_tensor = wavelet_tensor[:, :self.output_len]
             hilbert_repeated = hilbert_repeated[:, :self.output_len]
 
-        combined = torch.stack([wavelet_tensor, hilbert_repeated], dim=0)  # [2, num_scales, output_len]
-        return torch.tanh(combined)
-
+        combined = torch.stack([wavelet_tensor, hilbert_repeated], dim=0)
+        return torch.tanh(combined).to(orig_device)
+    
     def _pad(self, x: Tensor) -> Tensor:
         T = x.shape[0]
         if T == self.output_len:
@@ -86,3 +80,4 @@ class WaveletHilbertTransform:
             start = (T - self.output_len) // 2
             end = start + self.output_len
             return x[start:end]
+

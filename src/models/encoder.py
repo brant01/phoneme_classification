@@ -53,9 +53,10 @@ class Encoder(nn.Module):
 
         # Compute the flattened output size dynamically
         with torch.no_grad():
-            dummy = torch.zeros(1, in_channels, *input_shape)
+            dummy = torch.zeros(1, in_channels, *input_shape).to(next(self.encoder.parameters()).device)
             conv_out = self.encoder(dummy)
             self.flattened_size = conv_out.view(1, -1).shape[1]
+
 
         # Fully connected layers to produce mean and log-variance
         self.fc_mu = nn.Linear(self.flattened_size, latent_dim)

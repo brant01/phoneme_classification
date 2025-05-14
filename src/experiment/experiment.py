@@ -3,6 +3,7 @@ Experiment management class.
 """
 
 import torch
+import torchaudio
 
 from data_utils.loader import parse_dataset
 from experiment.exp_params import ExpParams
@@ -14,35 +15,56 @@ class Experiment:
     """
     Class to manage the full experiment setup and execution.
     """
-    def __init__(self,
-                 params: ExpParams) -> None:
-        """
-        Initialize the experiment with given parameters.
-        Sets up logging, checks data, and prepares output structure.
-        """
-        
+    def __init__(self, params: ExpParams) -> None:
         self.params = params
         self.logger = get_logger('experiment', log_dir=params.log_dir)
-        
+
         self.logger.info("Initializing experiment...")
         self.logger.info(f"Parameters:\n{params.to_dict()}")
-        
-        # Make output directory if needed
+
         self.params.output_dir.mkdir(parents=True, exist_ok=True)
-        
+
+
+        # --- Only check the path you're actually using ---
         self._check_data()
         self.device = self._get_device()
+
         
+    import torchaudio
+
     def _check_data(self) -> None:
-        """ Verify the data path exists and contains .wav files. """
+        """Verify that the dataset is valid and summarize basic audio properties."""
         if not self.params.data_path.exists():
             raise FileNotFoundError(f"Data path not found: {self.params.data_path}")
-        
+
         wav_files = list(self.params.data_path.rglob("*.wav"))
         if not wav_files:
             raise RuntimeError(f"No .wav files found in {self.params.data_path}")
-        
+
         self.logger.info(f"Found {len(wav_files)} .wav files in {self.params.data_path}")
+
+        lengths = []
+        sample_rates = set()
+
+        for f in wav_files:
+            waveform, sr = torchaudio.load(f)
+            lengths.append(waveform.shape[1])
+            sample_rates.add(sr)
+
+        if len(sample_rates) > 1:
+            raise ValueError(f"Inconsistent sample rates found: {sample_rates}")
+        else:
+            sr = sample_rates.pop()
+            self.logger.info(f"Confirmed sample rate: {sr} Hz")
+
+        min_len = min(lengths)
+        max_len = max(lengths)
+        avg_len = sum(lengths) / len(lengths)
+
+        self.logger.info(f"Min length: {min_len} samples ({min_len/sr:.2f} s)")
+        self.logger.info(f"Max length: {max_len} samples ({max_len/sr:.2f} s)")
+        self.logger.info(f"Avg length: {avg_len:.0f} samples ({avg_len/sr:.2f} s)")
+
         
     def _get_device(self) -> torch.device:
         """ Resolve best device from settings."""

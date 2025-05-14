@@ -4,29 +4,50 @@ Sets up experiment parameters and dispatches training.
 """
 
 from pathlib import Path
-
+import torch
+import random
+import numpy as np
+import torch.multiprocessing as mp
 
 from experiment.experiment import Experiment
 from experiment.exp_params import ExpParams
 
+
+def set_random_seeds(seed: int = 42) -> None:
+    """
+    Set random seeds for reproducibility across PyTorch, NumPy, and Python.
+    """
+    torch.manual_seed(seed)
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+
+
 if __name__ == "__main__":
-        
+    try:
+        mp.set_start_method("spawn", force=True)
+    except RuntimeError:
+        pass  # Already set in this process
+
+    set_random_seeds(42)
+
     params = ExpParams(
         data_path=Path("data/New Stimuli 9-8-2024"),
         output_dir=Path("outputs"),
         log_dir=Path("logs"),
 
         # Training settings
-        epochs=2,                 # Enough to converge (early stopping coming soon)
-        batch_size=32,             # Reduce to 16 if you hit memory limits
-        learning_rate=3e-4,        # Lower LR for stability
-        beta=1.0,                  # Multiplier for KL term
+        epochs=300,
+        batch_size=4,
+        learning_rate=3e-4,
+        beta=1.0,
 
         # KL Annealing
-        kl_schedule="sigmoid",     # More gradual ramp-up than linear
-        kl_beta_start=0.0,         # Start with no KL regularization
-        kl_beta_end=1.0,           # Full KL regularization by anneal_epochs
-        kl_anneal_epochs=40,       # Over first 40 epochs (20% of training)
+        kl_schedule="sigmoid",
+        kl_beta_start=0.0,
+        kl_beta_end=0.05,
+        kl_anneal_epochs=1000,
 
         # Augmentations
         use_pitch_shift=True,
@@ -36,11 +57,10 @@ if __name__ == "__main__":
 
         # Execution
         device="auto",
-        
+
         # Early stopping
-        early_stopping_patience = 10,
-        early_stopping_delta = 1.0  # minimum change to qualify as improvement
-        
+        early_stopping_patience=100,
+        early_stopping_delta=2.0,
     )
 
     exp = Experiment(params)
