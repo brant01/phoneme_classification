@@ -12,7 +12,6 @@ import torch.multiprocessing as mp
 from experiment.experiment import Experiment
 from experiment.exp_params import ExpParams
 
-
 def set_random_seeds(seed: int = 42) -> None:
     """
     Set random seeds for reproducibility across PyTorch, NumPy, and Python.
@@ -22,7 +21,6 @@ def set_random_seeds(seed: int = 42) -> None:
     np.random.seed(seed)
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
-
 
 if __name__ == "__main__":
     try:
@@ -37,28 +35,38 @@ if __name__ == "__main__":
         output_dir=Path("outputs"),
         log_dir=Path("logs"),
 
-        # Training settings
+        # Model
+        input_shape=(32, 16000),
+        latent_dim=16,
+        num_groups=8,
+
+        # Training
         epochs=300,
-        batch_size=4,
+        batch_size=64,
         learning_rate=3e-4,
         beta=1.0,
 
         # KL Annealing
-        kl_schedule="sigmoid",
+        kl_schedule="cyclical",
         kl_beta_start=0.0,
-        kl_beta_end=0.05,
-        kl_anneal_epochs=1000,
+        kl_beta_end=1.0,
+        kl_anneal_epochs=500,
+        kl_cycle_length=100,
 
         # Augmentations
         use_pitch_shift=True,
         use_partial_dropout=True,
         use_time_mask=True,
         use_freq_mask=True,
-        device="auto",
 
-        # Early stopping
+        # Device and early stopping
+        device="auto",
         early_stopping_patience=100,
         early_stopping_delta=2.0,
+
+        # Cross-validation
+        use_kfold=True,
+        n_splits=5,
     )
 
     exp = Experiment(params)

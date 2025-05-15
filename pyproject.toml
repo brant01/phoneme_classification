@@ -10,6 +10,7 @@ dependencies = [
     "polars>=1.29.0",
     "pytest>=8.3.5",
     "pywavelets>=1.8.0",
+    "scikit-learn>=1.6.1",
     "scipy>=1.15.2",
     "soundfile>=0.13.1",
     "torch>=2.7.0",

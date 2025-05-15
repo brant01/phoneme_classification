@@ -4,37 +4,24 @@ import math
 
 def get_beta(
     epoch: int,
-    schedule: Literal["linear", "sigmoid"],
+    schedule: str,
     beta_start: float,
     beta_end: float,
     anneal_epochs: int,
+    cycle_length: int = 100  # default if not passed
 ) -> float:
-    """
-    Returns the beta value for KL annealing at a given epoch.
-
-    Args:
-        epoch (int): Current training epoch (starting from 1).
-        schedule (str): Type of annealing schedule: 'linear' or 'sigmoid'.
-        beta_start (float): Initial beta value.
-        beta_end (float): Final beta value.
-        anneal_epochs (int): Number of epochs over which to anneal.
-
-    Returns:
-        float: Current beta value.
-    """
-    if epoch > anneal_epochs:
+    if schedule == "none":
         return beta_end
-
-    progress = epoch / anneal_epochs
-
-    if schedule == "linear":
-        return beta_start + (beta_end - beta_start) * progress
-
+    elif schedule == "linear":
+        return min(beta_end, beta_start + (beta_end - beta_start) * (epoch / anneal_epochs))
     elif schedule == "sigmoid":
-        # Scale progress from -6 to +6 for smoother sigmoid curve
-        x = 12 * progress - 6
-        beta = beta_start + (beta_end - beta_start) * (1 / (1 + math.exp(-x)))
-        return beta
-
+        import math
+        progress = min(epoch / anneal_epochs, 1.0)
+        return beta_start + (beta_end - beta_start) / (1 + math.exp(-12 * (progress - 0.5)))
+    elif schedule == "cyclical":
+        import math
+        # Cycle progress is between 0 and 1
+        cycle_progress = (epoch % cycle_length) / cycle_length
+        return beta_start + (beta_end - beta_start) * (0.5 * (1 - math.cos(2 * math.pi * cycle_progress)))
     else:
         raise ValueError(f"Unknown KL schedule: {schedule}")
