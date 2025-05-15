@@ -37,12 +37,12 @@ if __name__ == "__main__":
 
         # Model
         input_shape=(32, 16000),
-        latent_dim=16,
+        latent_dim=8,
         num_groups=8,
 
         # Training
-        epochs=300,
-        batch_size=64,
+        epochs=1000,
+        batch_size=16,
         learning_rate=3e-4,
         beta=1.0,
 

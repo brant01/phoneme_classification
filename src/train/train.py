@@ -93,6 +93,7 @@ def train(params: ExpParams,
         _run_training_loop(dataset, None, label_map, params, device, logger, run_dir, num_workers)
 
 def _run_training_loop(dataset, val_dataset, label_map, params, device, logger, run_dir, num_workers):
+    run_dir.mkdir(parents=True, exist_ok=True)  # ensure fold subdir exists
     pin_memory = device.type == "cuda"
 
     dataloader = DataLoader(
@@ -180,11 +181,13 @@ def _run_training_loop(dataset, val_dataset, label_map, params, device, logger, 
         else:
             val_loss, val_recon, val_kl = None, None, None
 
-        logger.info(
-            f"Epoch {epoch}/{params.epochs} — Total Loss: {avg_loss:.4f}, "
-            f"Recon: {avg_recon:.4f}, KL: {avg_kl:.4f}, KL Weight: {kl_weight:.4f}" +
-            (f", Val: {val_loss:.4f}, Recon: {val_recon:.4f}, KL: {val_kl:.4f}" if val_loss is not None else "")
+        log_msg = (
+            f"Epoch {epoch}/{params.epochs} — "
+            f"Train Loss: {avg_loss:.4f} (Recon: {avg_recon:.4f}, KL: {avg_kl:.4f}, KL Weight: {kl_weight:.4f})"
         )
+        if val_loss is not None:
+            log_msg += f" | Val Loss: {val_loss:.4f} (Recon: {val_recon:.4f}, KL: {val_kl:.4f})"
+        logger.info(log_msg)
 
         torch.save(model.state_dict(), run_dir / f"vae_epoch{epoch}.pt")
 
