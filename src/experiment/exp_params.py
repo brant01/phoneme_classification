@@ -19,6 +19,7 @@ class ExpParams:
     # Model
     input_shape: tuple[int, int] = (32, 16000)  # (channels, time)
     latent_dim: int = 3
+    num_groups: int = 8  # 🔧 Number of groups for GroupNorm
     
     # Training
     epochs: int = 10

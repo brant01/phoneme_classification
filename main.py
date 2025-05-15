@@ -54,8 +54,6 @@ if __name__ == "__main__":
         use_partial_dropout=True,
         use_time_mask=True,
         use_freq_mask=True,
-
-        # Execution
         device="auto",
 
         # Early stopping

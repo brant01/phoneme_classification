@@ -88,7 +88,8 @@ def train(params: ExpParams,
     model = VAE(
         input_shape=input_shape,
         in_channels=in_channels,
-        latent_dim=params.latent_dim
+        latent_dim=params.latent_dim,
+        num_groups=params.num_groups  # ✅ Added for GroupNorm support
     ).to(device)
 
     optimizer = optim.Adam(model.parameters(), lr=params.learning_rate)
