@@ -15,6 +15,7 @@ from utils.run_manager import create_run_dir, save_config, save_loss_history
 from utils.logger import get_logger
 from utils.schedules import get_beta
 from utils.metrics import compute_validation_loss
+from utils.evaluate_latent_classification import evaluate_latent_classification
 
 from tqdm import tqdm
 import numpy as np
@@ -175,6 +176,18 @@ def _run_training_loop(dataset, val_dataset, label_map, params, device, logger, 
                 persistent_workers=(num_workers > 0)
             )
             val_loss, val_recon, val_kl = compute_validation_loss(model, val_loader, device, logger)
+            
+            latent_acc = evaluate_latent_classification(
+                model=model,
+                train_dataset=dataset,
+                val_dataset=val_dataset,
+                device=device,
+                label_map=label_map,
+                run_dir=run_dir,
+                save_plot=False  # optional if you only want final figure saved
+            )
+            logger.info(f"[EVAL] Epoch {epoch} — Latent classification accuracy: {latent_acc * 100:.2f}%")
+            
             val_losses.append(val_loss)
             val_recon_list.append(val_recon)
             val_kl_list.append(val_kl)
@@ -217,3 +230,14 @@ def _run_training_loop(dataset, val_dataset, label_map, params, device, logger, 
 
     dataset.augment = False
     extract_latents(model, dataset, device, label_map, run_dir)
+    
+    if val_dataset is not None:
+        acc = evaluate_latent_classification(
+            model=model,
+            train_dataset=dataset,
+            val_dataset=val_dataset,
+            device=device,
+            label_map=label_map,
+            run_dir=run_dir
+        )
+        logger.info(f"[SUMMARY] Latent classification accuracy: {acc * 100:.2f}%")
