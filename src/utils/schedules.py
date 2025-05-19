@@ -1,6 +1,5 @@
 
-from typing import Literal
-import math
+# This file contains the implementation of various KL schedules for training diffusion models.
 
 def get_beta(
     epoch: int,

@@ -18,7 +18,6 @@ from utils.metrics import compute_validation_loss
 from utils.evaluate_latent_classification import evaluate_latent_classification
 
 from tqdm import tqdm
-import numpy as np
 
 def train(params: ExpParams, 
           device: torch.device, 
@@ -177,16 +176,17 @@ def _run_training_loop(dataset, val_dataset, label_map, params, device, logger, 
             )
             val_loss, val_recon, val_kl = compute_validation_loss(model, val_loader, device, logger)
             
-            latent_acc = evaluate_latent_classification(
-                model=model,
-                train_dataset=dataset,
-                val_dataset=val_dataset,
-                device=device,
-                label_map=label_map,
-                run_dir=run_dir,
-                save_plot=False  # optional if you only want final figure saved
-            )
-            logger.info(f"[EVAL] Epoch {epoch} — Latent classification accuracy: {latent_acc * 100:.2f}%")
+            latent_acc = None
+            if params.log_latent_every and epoch % params.log_latent_every == 0:
+                latent_acc = evaluate_latent_classification(
+                    model=model,
+                    train_dataset=dataset,
+                    val_dataset=val_dataset,
+                    device=device,
+                    label_map=label_map,
+                    run_dir=run_dir,
+                )
+                logger.info(f"[EVAL] Epoch {epoch} — Latent classification accuracy: {latent_acc * 100:.2f}%")
             
             val_losses.append(val_loss)
             val_recon_list.append(val_recon)

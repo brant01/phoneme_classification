@@ -50,6 +50,9 @@ class ExpParams:
     # K-Fold Cross Validation
     use_kfold: bool = False
     n_splits: int = 5
+    
+    # Log latents every N epochs
+    log_latent_every: int = 10
 
     def to_dict(self) -> dict:
         """
