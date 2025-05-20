@@ -19,9 +19,6 @@ from utils.evaluate_latent_classification import evaluate_latent_classification
 
 from tqdm import tqdm
 
-def apply_free_bits(kl_tensor: torch.Tensor, free_bits_threshold: float = 0.2) -> torch.Tensor:
-    return torch.maximum(kl_tensor, torch.tensor(free_bits_threshold, device=kl_tensor.device))
-
 def train(params: ExpParams, 
           device: torch.device, 
           parsed_data: tuple) -> None:
@@ -111,7 +108,8 @@ def _run_training_loop(dataset, val_dataset, label_map, params, device, logger, 
         shuffle=True,
         num_workers=num_workers,
         pin_memory=pin_memory,
-        persistent_workers=(num_workers > 0)
+        persistent_workers=(num_workers > 0),
+        drop_last=True,
     )
 
     C, F, T = dataset[0][1].shape
@@ -140,9 +138,12 @@ def _run_training_loop(dataset, val_dataset, label_map, params, device, logger, 
         total_loss = 0.0
         total_recon = 0.0
         total_kl = 0.0
+        total_l1 = 0.0
+        total_class = 0.0
 
-        for i, (x_aug, x_clean, _, _) in enumerate(tqdm(dataloader, desc=f"Epoch {epoch}/{params.epochs}", leave=False)):
+        for i, (x_aug, x_clean, y_labels, _) in enumerate(tqdm(dataloader, desc=f"Epoch {epoch}/{params.epochs}", leave=False)):
             x_aug, x_clean = x_aug.to(device), x_clean.to(device)
+            y_labels = y_labels.to(device)
 
             optimizer.zero_grad()
             x_hat, mu, logvar = model(x_aug)
@@ -158,11 +159,10 @@ def _run_training_loop(dataset, val_dataset, label_map, params, device, logger, 
             if epoch % params.log_latent_every == 0 and i == 0:
                 logger.debug(f"[EPOCH {epoch}] KL per dimension: {kl_dim_mean.detach().cpu().numpy()}")
 
-            recon_loss, kl_loss = vae_loss(
+            recon_loss, kl_loss, latent_l1 = vae_loss(
                 x_hat, x_clean, mu, logvar,
                 free_bits_threshold=params.free_bits_threshold  
             )
-            kl_loss = apply_free_bits(kl_loss)  # apply free bits
 
             kl_weight = get_beta(
                 epoch=epoch,
@@ -173,17 +173,51 @@ def _run_training_loop(dataset, val_dataset, label_map, params, device, logger, 
                 cycle_length=params.kl_cycle_length
             )
 
-            loss = recon_loss + params.beta * kl_weight * kl_loss
+            l1_weight = 0.01
+
+            loss = recon_loss + params.beta * kl_weight * kl_loss + l1_weight * latent_l1
+
+            if not hasattr(model, 'classifier'):
+                # Create a more powerful classifier with multiple layers using LayerNorm instead of BatchNorm
+                num_classes = len(label_map)
+                model.classifier = torch.nn.Sequential(
+                    torch.nn.Linear(params.latent_dim, 32),
+                    torch.nn.LayerNorm(32),  # LayerNorm works with any batch size
+                    torch.nn.ReLU(),
+                    torch.nn.Dropout(0.3),
+                    torch.nn.Linear(32, num_classes)
+                ).to(device)
+                # Add the classifier parameters to the optimizer
+                optimizer.add_param_group({'params': model.classifier.parameters()})
+                logger.info(f"Added MLP classification head: {params.latent_dim} -> 32 -> {num_classes}")
+                        
+            
+            # Compute classification loss
+            class_preds = model.classifier(mu)  # Use means directly
+            class_loss = torch.nn.functional.cross_entropy(class_preds, y_labels)
+            
+            # Add classification loss to total (10% weighting)
+            class_weight = 0.5
+            loss += class_weight * class_loss
+            
+            # Track classification loss
+            if not 'total_class' in locals():
+                total_class = 0.0
+            total_class += class_loss.item()
+
             loss.backward()
             optimizer.step()
 
             total_loss += loss.item()
             total_recon += recon_loss.item()
             total_kl += kl_loss.item()
+            total_l1 += latent_l1.item()
 
         avg_loss = total_loss / len(dataloader)
         avg_recon = total_recon / len(dataloader)
         avg_kl = total_kl / len(dataloader)
+        avg_l1 = total_l1 / len(dataloader)
+        avg_class = total_class / len(dataloader)
         train_losses.append(avg_loss)
 
         if val_dataset is not None:
@@ -216,9 +250,10 @@ def _run_training_loop(dataset, val_dataset, label_map, params, device, logger, 
             val_loss, val_recon, val_kl = None, None, None
 
         log_msg = (
-            f"Epoch {epoch}/{params.epochs} — "
-            f"Train Loss: {avg_loss:.4f} (Recon: {avg_recon:.4f}, KL: {avg_kl:.4f}, KL Weight: {kl_weight:.4f})"
-        )
+                f"Epoch {epoch}/{params.epochs} — "
+                f"Train Loss: {avg_loss:.4f} (Recon: {avg_recon:.4f}, KL: {avg_kl:.4f}, "
+                f"L1: {avg_l1:.4f}, Class: {avg_class:.4f}, KL Weight: {kl_weight:.4f})"
+            )
         
         logger.info(f"[DEBUG] Epoch {epoch} — KL/Reconstruction Ratio: {avg_kl / (avg_recon + 1e-8):.2f}")
         

@@ -38,28 +38,28 @@ if __name__ == "__main__":
 
         # Model
         input_shape=(32, 16000),
-        latent_dim=16,
+        latent_dim=8,
         num_groups=16,
 
         # Training
         epochs=200,
-        batch_size=8,
+        batch_size=2,
         learning_rate=3e-4,
         beta=1.0,
 
         # KL Annealing
         kl_schedule="cyclical",
-        kl_beta_start=0.2,
-        kl_beta_end=0.8,
+        kl_beta_start=0.0,
+        kl_beta_end=1.0,
         kl_anneal_epochs=200,
-        kl_cycle_length=10,
+        kl_cycle_length=5,
 
         # Augmentations
         use_pitch_shift=False,
         use_partial_dropout=True,
         use_time_mask=True,
         use_freq_mask=True,
-        n_augment=20,
+        n_augment=5,
 
         # Device and early stopping
         device="auto",
@@ -74,7 +74,7 @@ if __name__ == "__main__":
         log_latent_every = 2,  # Evaluate latent classification every N epochs
         
         # Free bits
-        free_bits_threshold=0.2,
+        free_bits_threshold=0.1,
     )
 
     exp = Experiment(params)

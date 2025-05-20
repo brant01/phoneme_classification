@@ -8,7 +8,9 @@ import torchaudio
 from data_utils.loader import parse_dataset
 from experiment.exp_params import ExpParams
 from train.train import train
+from utils.device import get_best_device
 from utils.logger import get_logger
+
 
 
 class Experiment:
@@ -69,13 +71,21 @@ class Experiment:
     def _get_device(self) -> torch.device:
         """ Resolve best device from settings."""
         if self.params.device == "auto":
-            if torch.backends.mps.is_available():
-                return torch.device("mps")
-            elif torch.cuda.is_available():
-                return torch.device("cuda")
-            else:
-                return torch.device("cpu")
-        return torch.device(self.params.device)
+            device = get_best_device()
+            self.logger.info(f"Auto-selected device: {device}")
+            
+            # Log GPU details if applicable
+            if device.type == "cuda":
+                gpu_name = torch.cuda.get_device_name(device.index)
+                mem_total = torch.cuda.get_device_properties(device.index).total_memory / 1e9
+                self.logger.info(f"Using GPU: {gpu_name} with {mem_total:.1f} GB memory")
+            elif device.type == "mps":
+                self.logger.info("Using Apple Silicon GPU with MPS")
+                
+            return device
+        else:
+            # User specified a device
+            return torch.device(self.params.device)
     
     def run(self) -> None:
         """

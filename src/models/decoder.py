@@ -16,7 +16,7 @@ class Decoder(nn.Module):
         in_channels: int,
         latent_dim: int,
         num_groups: int = 8,
-        dropout_prob: float = 0.3  # <-- New
+        dropout_prob: float = 0.3 
     ) -> None:
         """
         Args:
@@ -33,13 +33,15 @@ class Decoder(nn.Module):
         self.num_groups = num_groups
         self.dropout_prob = dropout_prob
 
-        self.projected_channels = 256
+        self.projected_channels = 64 # reduced from 256
+
         F, T = input_shape
         self.projected_shape = (
             self.projected_channels,
             F // 16,
             T // 16,
         )
+
         flattened_size = self.projected_channels * self.projected_shape[1] * self.projected_shape[2]
 
         self.fc = nn.Linear(latent_dim, flattened_size)
@@ -53,10 +55,10 @@ class Decoder(nn.Module):
             )
 
         self.decoder = nn.Sequential(
-            deconv_block(256, 128),
-            deconv_block(128, 64),
-            deconv_block(64, 32),
-            nn.ConvTranspose2d(32, self.in_channels, kernel_size=4, stride=2, padding=1),
+            deconv_block(64, 48),  
+            deconv_block(48, 32),  
+            deconv_block(32, 16),  
+            nn.ConvTranspose2d(16, self.in_channels, kernel_size=4, stride=2, padding=1),  
             nn.Tanh()
         )
         
