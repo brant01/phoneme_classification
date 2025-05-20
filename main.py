@@ -31,35 +31,35 @@ if __name__ == "__main__":
     set_random_seeds(42)
 
     params = ExpParams(
-        #data_path=Path("data/New Stimuli 9-8-2024"),
-        data_path=Path("data/New Stimuli 9-8-2024/CV/Female"),
+        data_path=Path("data/New Stimuli 9-8-2024"),
+        #data_path=Path("data/New Stimuli 9-8-2024/CV/Female"),
         output_dir=Path("outputs"),
         log_dir=Path("logs"),
 
         # Model
         input_shape=(32, 16000),
-        latent_dim=8,
+        latent_dim=64,
         num_groups=16,
 
         # Training
         epochs=200,
-        batch_size=16,
+        batch_size=4,
         learning_rate=3e-4,
-        beta=0.01,
+        beta=1.0,
 
         # KL Annealing
         kl_schedule="cyclical",
-        kl_beta_start=0.0,
-        kl_beta_end=0.01,
-        kl_anneal_epochs=300,
-        kl_cycle_length=50,
+        kl_beta_start=0.2,
+        kl_beta_end=0.8,
+        kl_anneal_epochs=200,
+        kl_cycle_length=10,
 
         # Augmentations
         use_pitch_shift=False,
         use_partial_dropout=True,
         use_time_mask=True,
         use_freq_mask=True,
-        n_augment=10,
+        n_augment=20,
 
         # Device and early stopping
         device="auto",
@@ -71,7 +71,10 @@ if __name__ == "__main__":
         n_splits=10,
         
         # logging latent values
-        log_latent_every = 5  # Evaluate latent classification every N epochs
+        log_latent_every = 2,  # Evaluate latent classification every N epochs
+        
+        # Free bits
+        free_bits_threshold=0.2,
     )
 
     exp = Experiment(params)

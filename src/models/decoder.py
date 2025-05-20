@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 
+from src.models.initialize import initialize_weights
 
 class Decoder(nn.Module):
     """
@@ -14,7 +15,8 @@ class Decoder(nn.Module):
         input_shape: tuple[int, int],
         in_channels: int,
         latent_dim: int,
-        num_groups: int = 8  # Match encoder default
+        num_groups: int = 8,
+        dropout_prob: float = 0.3  # <-- New
     ) -> None:
         """
         Args:
@@ -22,12 +24,14 @@ class Decoder(nn.Module):
             in_channels (int): Number of output channels (usually 2 for real + phase)
             latent_dim (int): Dimension of latent space
             num_groups (int): Number of groups for GroupNorm
+            dropout_prob (float): Dropout probability for decoder layers
         """
         super().__init__()
         self.input_shape = input_shape
         self.in_channels = in_channels
         self.latent_dim = latent_dim
         self.num_groups = num_groups
+        self.dropout_prob = dropout_prob
 
         self.projected_channels = 256
         F, T = input_shape
@@ -44,7 +48,8 @@ class Decoder(nn.Module):
             return nn.Sequential(
                 nn.ConvTranspose2d(in_c, out_c, kernel_size=4, stride=2, padding=1),
                 nn.GroupNorm(num_groups=min(self.num_groups, out_c), num_channels=out_c),
-                nn.ReLU()
+                nn.LeakyReLU(0.01),
+                nn.Dropout2d(p=self.dropout_prob)  # <-- Dropout after activation
             )
 
         self.decoder = nn.Sequential(
@@ -54,6 +59,8 @@ class Decoder(nn.Module):
             nn.ConvTranspose2d(32, self.in_channels, kernel_size=4, stride=2, padding=1),
             nn.Tanh()
         )
+        
+        self.apply(initialize_weights)
 
     def forward(self, z: torch.Tensor) -> torch.Tensor:
         x = self.fc(z)

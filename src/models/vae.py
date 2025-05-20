@@ -34,6 +34,7 @@ class VAE(nn.Module):
         mu, logvar = self.encoder(x)
         logvar = torch.clamp(logvar, min=-10.0, max=10.0)
         z = self.reparameterize(mu, logvar)
+        z = torch.clamp(z, min=-10.0, max=10.0)
         x_hat = self.decoder(z)
         x_hat = self._match_output_length(x_hat, x)
         if torch.isnan(mu).any() or torch.isnan(logvar).any():

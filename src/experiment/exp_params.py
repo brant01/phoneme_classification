@@ -54,6 +54,9 @@ class ExpParams:
     
     # Log latents every N epochs
     log_latent_every: int = 10
+    
+    # Free bits
+    free_bits_threshold: float = 0.1
 
     def to_dict(self) -> dict:
         """
