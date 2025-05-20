@@ -69,7 +69,10 @@ def train(params: ExpParams,
                 augment=True,
                 augmentation=augment_fn,
                 sample_rate=params.target_sr,
+                n_augment=params.n_augment,
             )
+            
+            logger.info(f"Training dataset length (augmented): {len(train_dataset)}")
 
             val_dataset = PhonemeDataset(
                 val_files,
@@ -88,7 +91,10 @@ def train(params: ExpParams,
             augment=True,
             augmentation=augment_fn,
             sample_rate=params.target_sr,
+            n_augment=params.n_augment,
         )
+        
+        logger.info(f"Training dataset length (augmented): {len(dataset)}")
 
         _run_training_loop(dataset, None, label_map, params, device, logger, run_dir, num_workers)
 
@@ -142,6 +148,9 @@ def _run_training_loop(dataset, val_dataset, label_map, params, device, logger, 
                 logger.warning("NaNs detected in latent parameters (mu or logvar).")
 
             recon_loss, kl_loss = vae_loss(x_hat, x_clean, mu, logvar)
+            
+            # unstable, kapping kl_loss
+            kl_loss = torch.clamp(kl_loss, min=0.0, max=1000.0)
 
             kl_weight = get_beta(
                 epoch=epoch,
@@ -198,6 +207,9 @@ def _run_training_loop(dataset, val_dataset, label_map, params, device, logger, 
             f"Epoch {epoch}/{params.epochs} — "
             f"Train Loss: {avg_loss:.4f} (Recon: {avg_recon:.4f}, KL: {avg_kl:.4f}, KL Weight: {kl_weight:.4f})"
         )
+        
+        logger.info(f"[DEBUG] Epoch {epoch} — KL/Reconstruction Ratio: {avg_kl / (avg_recon + 1e-8):.2f}")
+        
         if val_loss is not None:
             log_msg += f" | Val Loss: {val_loss:.4f} (Recon: {val_recon:.4f}, KL: {val_kl:.4f})"
         logger.info(log_msg)

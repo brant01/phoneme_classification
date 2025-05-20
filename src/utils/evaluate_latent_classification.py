@@ -18,7 +18,7 @@ def evaluate_latent_classification(
     run_dir
 ) -> float:
     """
-    Train a logistic regression classifier on VAE latent means and evaluate on validation set.
+    Train a classifier on VAE latent means and evaluate on validation set.
 
     Args:
         model (VAE): Trained VAE model
@@ -49,21 +49,24 @@ def evaluate_latent_classification(
     X_train, y_train = extract_latents(train_dataset)
     X_val, y_val = extract_latents(val_dataset)
 
+    # Log latent stats
+    train_mean = np.mean(X_train, axis=0)
+    train_std = np.std(X_train, axis=0)
+    logger.info(f"[LATENT STATS] Train latents mean (first 5 dims): {train_mean[:5]}")
+    logger.info(f"[LATENT STATS] Train latents std  (first 5 dims): {train_std[:5]}")
+
     # Standardize latent features
     scaler = StandardScaler()
     X_train = scaler.fit_transform(X_train)
     X_val = scaler.transform(X_val)
 
-    # Fit logistic regression
-    #clf = LogisticRegression(max_iter=1000, solver="lbfgs")
-    
+    # Train classifier (use RandomForest or LogisticRegression)
     clf = RandomForestClassifier(n_estimators=100, random_state=42)
-    
     clf.fit(X_train, y_train)
     y_pred = clf.predict(X_val)
 
     acc = accuracy_score(y_val, y_pred)
-    logger.info(f"[LATENT EVAL] Logistic Regression Accuracy: {acc * 100:.2f}%")
+    logger.info(f"[LATENT EVAL] Classifier Accuracy: {acc * 100:.2f}%")
 
     # Save results
     np.save(run_dir / "latent_val_preds.npy", y_pred)

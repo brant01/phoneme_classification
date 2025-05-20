@@ -39,6 +39,7 @@ class ExpParams:
     use_partial_dropout: bool = True
     use_time_mask: bool = True
     use_freq_mask: bool = True
+    n_augment: int = 1
 
     # Execution
     device: str = "auto"  # "cpu", "cuda", "mps", or "auto"
