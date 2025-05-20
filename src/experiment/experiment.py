@@ -11,8 +11,6 @@ from train.train import train
 from utils.device import get_best_device
 from utils.logger import get_logger
 
-
-
 class Experiment:
     """
     Class to manage the full experiment setup and execution.
@@ -30,9 +28,6 @@ class Experiment:
         # --- Only check the path you're actually using ---
         self._check_data()
         self.device = self._get_device()
-
-        
-    import torchaudio
 
     def _check_data(self) -> None:
         """Verify that the dataset is valid and summarize basic audio properties."""
