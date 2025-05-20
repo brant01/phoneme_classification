@@ -41,7 +41,7 @@ if __name__ == "__main__":
         num_groups=8,
 
         # Training
-        epochs=1000,
+        epochs=300,
         batch_size=16,
         learning_rate=3e-4,
         beta=1.0,
@@ -54,15 +54,15 @@ if __name__ == "__main__":
         kl_cycle_length=100,
 
         # Augmentations
-        use_pitch_shift=True,
-        use_partial_dropout=True,
-        use_time_mask=True,
-        use_freq_mask=True,
+        use_pitch_shift=False,
+        use_partial_dropout=False,
+        use_time_mask=False,
+        use_freq_mask=False,
 
         # Device and early stopping
         device="auto",
         early_stopping_patience=100,
-        early_stopping_delta=2.0,
+        early_stopping_delta=10.0,
 
         # Cross-validation
         use_kfold=True,

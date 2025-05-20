@@ -184,7 +184,6 @@ def _run_training_loop(dataset, val_dataset, label_map, params, device, logger, 
                 device=device,
                 label_map=label_map,
                 run_dir=run_dir,
-                save_plot=False  # optional if you only want final figure saved
             )
             logger.info(f"[EVAL] Epoch {epoch} — Latent classification accuracy: {latent_acc * 100:.2f}%")
             
