@@ -39,6 +39,7 @@ class ExpParams:
     use_partial_dropout: bool = True
     use_time_mask: bool = True
     use_freq_mask: bool = True
+    n_augment: int = 1
 
     # Execution
     device: str = "auto"  # "cpu", "cuda", "mps", or "auto"
@@ -50,6 +51,12 @@ class ExpParams:
     # K-Fold Cross Validation
     use_kfold: bool = False
     n_splits: int = 5
+    
+    # Log latents every N epochs
+    log_latent_every: int = 10
+    
+    # Free bits
+    free_bits_threshold: float = 0.1
 
     def to_dict(self) -> dict:
         """

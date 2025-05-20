@@ -12,17 +12,18 @@ from typing import Optional, Callable
 
 class PhonemeDataset(Dataset):
     """
-    Dataset for phoneme classsification and resonstruction
+    Dataset for phoneme classification and reconstruction.
+    Supports on-the-fly virtual dataset expansion via `n_augment`.
     """
-    
     def __init__(
         self,
         file_paths: list[Path],
         labels: list[int],
         transform: Callable[[Tensor], Tensor],
         augment: bool = False,
-        augmentation: Optional[Callable[[Tensor, Tensor], Tensor]] = None,
+        augmentation: Optional[Callable[[Tensor, Tensor], tuple[Tensor, Tensor]]] = None,
         sample_rate: int = 16000,
+        n_augment: int = 1,
     ):
         self.file_paths = file_paths
         self.labels = labels
@@ -30,16 +31,16 @@ class PhonemeDataset(Dataset):
         self.augment = augment
         self.augmentation = augmentation
         self.sample_rate = sample_rate
-        
+        self.n_augment = n_augment
+        self.real_len = len(file_paths)
+
     def __len__(self) -> int:
-        return len(self.file_paths)
-    
+        return self.real_len * self.n_augment
+
     def __getitem__(self, index: int) -> tuple[Tensor, Tensor, int, str]:
-        """
-        Return a tuple of (augmented_features, clean_features, label_index, filename)
-        """
-        file_path = self.file_paths[index]
-        label_idx = self.labels[index]
+        real_idx = index % self.real_len
+        file_path = self.file_paths[real_idx]
+        label_idx = self.labels[real_idx]
 
         waveform, sr = torchaudio.load(str(file_path))  # waveform: [1, T] or [channels, T]
 

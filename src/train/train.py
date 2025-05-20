@@ -18,7 +18,9 @@ from utils.metrics import compute_validation_loss
 from utils.evaluate_latent_classification import evaluate_latent_classification
 
 from tqdm import tqdm
-import numpy as np
+
+def apply_free_bits(kl_tensor: torch.Tensor, free_bits_threshold: float = 0.2) -> torch.Tensor:
+    return torch.maximum(kl_tensor, torch.tensor(free_bits_threshold, device=kl_tensor.device))
 
 def train(params: ExpParams, 
           device: torch.device, 
@@ -70,7 +72,10 @@ def train(params: ExpParams,
                 augment=True,
                 augmentation=augment_fn,
                 sample_rate=params.target_sr,
+                n_augment=params.n_augment,
             )
+            
+            logger.info(f"Training dataset length (augmented): {len(train_dataset)}")
 
             val_dataset = PhonemeDataset(
                 val_files,
@@ -89,7 +94,10 @@ def train(params: ExpParams,
             augment=True,
             augmentation=augment_fn,
             sample_rate=params.target_sr,
+            n_augment=params.n_augment,
         )
+        
+        logger.info(f"Training dataset length (augmented): {len(dataset)}")
 
         _run_training_loop(dataset, None, label_map, params, device, logger, run_dir, num_workers)
 
@@ -133,7 +141,7 @@ def _run_training_loop(dataset, val_dataset, label_map, params, device, logger, 
         total_recon = 0.0
         total_kl = 0.0
 
-        for x_aug, x_clean, _, _ in tqdm(dataloader, desc=f"Epoch {epoch}/{params.epochs}", leave=False):
+        for i, (x_aug, x_clean, _, _) in enumerate(tqdm(dataloader, desc=f"Epoch {epoch}/{params.epochs}", leave=False)):
             x_aug, x_clean = x_aug.to(device), x_clean.to(device)
 
             optimizer.zero_grad()
@@ -141,8 +149,20 @@ def _run_training_loop(dataset, val_dataset, label_map, params, device, logger, 
 
             if torch.isnan(mu).any() or torch.isnan(logvar).any():
                 logger.warning("NaNs detected in latent parameters (mu or logvar).")
+                
+            # Compute KL divergence per dimension
+            kl_per_dim = -0.5 * (1 + logvar - mu.pow(2) - logvar.exp())  # [B, D]
+            kl_dim_mean = kl_per_dim.mean(dim=0)  # shape: [latent_dim]
 
-            recon_loss, kl_loss = vae_loss(x_hat, x_clean, mu, logvar)
+            # Log every N steps or first batch of each epoch to avoid spam
+            if epoch % params.log_latent_every == 0 and i == 0:
+                logger.debug(f"[EPOCH {epoch}] KL per dimension: {kl_dim_mean.detach().cpu().numpy()}")
+
+            recon_loss, kl_loss = vae_loss(
+                x_hat, x_clean, mu, logvar,
+                free_bits_threshold=params.free_bits_threshold  
+            )
+            kl_loss = apply_free_bits(kl_loss)  # apply free bits
 
             kl_weight = get_beta(
                 epoch=epoch,
@@ -177,15 +197,17 @@ def _run_training_loop(dataset, val_dataset, label_map, params, device, logger, 
             )
             val_loss, val_recon, val_kl = compute_validation_loss(model, val_loader, device, logger)
             
-            latent_acc = evaluate_latent_classification(
-                model=model,
-                train_dataset=dataset,
-                val_dataset=val_dataset,
-                device=device,
-                label_map=label_map,
-                run_dir=run_dir,
-            )
-            logger.info(f"[EVAL] Epoch {epoch} — Latent classification accuracy: {latent_acc * 100:.2f}%")
+            latent_acc = None
+            if params.log_latent_every and epoch % params.log_latent_every == 0:
+                latent_acc = evaluate_latent_classification(
+                    model=model,
+                    train_dataset=dataset,
+                    val_dataset=val_dataset,
+                    device=device,
+                    label_map=label_map,
+                    run_dir=run_dir,
+                )
+                logger.info(f"[EVAL] Epoch {epoch} — Latent classification accuracy: {latent_acc * 100:.2f}%")
             
             val_losses.append(val_loss)
             val_recon_list.append(val_recon)
@@ -197,6 +219,9 @@ def _run_training_loop(dataset, val_dataset, label_map, params, device, logger, 
             f"Epoch {epoch}/{params.epochs} — "
             f"Train Loss: {avg_loss:.4f} (Recon: {avg_recon:.4f}, KL: {avg_kl:.4f}, KL Weight: {kl_weight:.4f})"
         )
+        
+        logger.info(f"[DEBUG] Epoch {epoch} — KL/Reconstruction Ratio: {avg_kl / (avg_recon + 1e-8):.2f}")
+        
         if val_loss is not None:
             log_msg += f" | Val Loss: {val_loss:.4f} (Recon: {val_recon:.4f}, KL: {val_kl:.4f})"
         logger.info(log_msg)

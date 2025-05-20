@@ -39,8 +39,8 @@ def compute_validation_loss(
     avg_recon = total_recon / n_batches
     avg_kl = total_kl / n_batches
 
-    logger.info(
+    '''logger.info(
         f"[VAL] Validation — Total: {avg_loss:.4f}, Recon: {avg_recon:.4f}, KL: {avg_kl:.4f}"
-    )
+    )'''
 
     return avg_loss, avg_recon, avg_kl

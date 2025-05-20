@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 
+from src.models.initialize import initialize_weights
+
 
 class Encoder(nn.Module):
     def __init__(
@@ -20,7 +22,7 @@ class Encoder(nn.Module):
             return nn.Sequential(
                 nn.Conv2d(in_c, out_c, kernel_size=3, stride=2, padding=1),
                 nn.GroupNorm(num_groups=min(self.num_groups, out_c), num_channels=out_c),
-                nn.ReLU(),
+                nn.LeakyReLU(0.01),
                 nn.Dropout(0.1)
             )
 
@@ -35,6 +37,8 @@ class Encoder(nn.Module):
             dummy = torch.zeros(1, in_channels, *input_shape).to(next(self.encoder.parameters()).device)
             conv_out = self.encoder(dummy)
             self.flattened_size = conv_out.view(1, -1).shape[1]
+            
+        self.apply(initialize_weights)
 
 
         # Fully connected layers to produce mean and log-variance
@@ -46,4 +50,5 @@ class Encoder(nn.Module):
         x = torch.flatten(x, start_dim=1)
         mu = self.fc_mu(x)
         logvar = self.fc_logvar(x)
+        logvar = torch.clamp(logvar, min=-5.0, max=5.0)
         return mu, logvar
