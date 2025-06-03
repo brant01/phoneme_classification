@@ -1,0 +1,34 @@
+# Python artifacts
+__pycache__/
+*.py[cod]
+*.so
+
+# Environment
+.env
+.venv/
+env/
+venv/
+
+# IDE/editor folders
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+
+# Data
+data/
+datasets/
+
+# Checkpoints
+checkpoints/
+runs/
+logs/
+outputs/
+
+# uv-specific
+uv.lock
+
+# Ignore all files in the outputs directory but keep structure
+outputs/*
+!outputs/.gitkeep
