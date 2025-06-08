@@ -1,3 +1,4 @@
+<!-- CLAUDE.md Template Version: 1.0 -->
 # Claude.md - Project Configuration v1.0
 
 ## NAVIGATION GUIDE FOR CLAUDE
@@ -15,18 +16,32 @@
 
 <!-- Claude updates this section based on project needs -->
 
-Project Name: Phoneme Classification VAE
-Last Updated: 2025-06-03
-Description: Variational Autoencoder for phoneme classification that learns voice-invariant representations from wav recordings
+Project Name: [PROJECT_NAME]  
+Last Updated: [DATE]  
+Description: [Brief project description]
 
 ### Project Context
 
-- **Primary Goal**: Train a VAE to classify phonemes while being invariant to speaker gender (male/female voices)
-- **Project Type**: Experiment/Research
-- **Data Types**: .wav files (16kHz), numpy arrays, model checkpoints (.pth), latent representations (.npy)
-- **Key Libraries**: torch, torchaudio, soundfile, polars, scikit-learn, pywavelets
-- **Performance Requirements**: Memory-efficient for audio processing, reproducible training with fixed seeds
-- **Domain Context**: Speech processing/phonetics research - audio data contains phoneme recordings from male and female speakers
+- **Primary Goal**: [Main objective]
+- **Project Type**: [e.g., Web app, CLI tool, Library]
+- **Data Types**: [Key data structures used]
+- **Key Libraries**: [Main dependencies]
+- **Performance Requirements**: [Speed, memory, etc.]
+- **Domain Context**: [Business/technical domain]
+
+### Core Functionality
+
+[List main features and components]
+
+### Design Decisions
+
+[Document key architectural choices and rationale]
+
+### Architecture
+
+```
+[Project structure diagram]
+```
 
 ---
 
@@ -49,20 +64,19 @@ Description: Variational Autoencoder for phoneme classification that learns voic
 
 ### Technical Standards
 
-- **Python 3.12+** with modern syntax (built-in generics)
-- **Package Management**: `uv` only
-- **Formatting/Linting**: `ruff` (88-char lines)
-- **Testing**: `pytest` with descriptive names
-- **Config**: `hydra`/`omegaconf` ONLY for experiment projects
-- **Structure**: Use modern best practices for project organization
+- **Language**: [Primary language and version]
+- **Dependencies**: [Dependency management approach]
+- **Error Handling**: [Error handling strategy]
+- **Testing**: [Testing approach]
+- **Structure**: [Code organization principles]
 
 ### Security Requirements (NON-NEGOTIABLE)
 
-1. ALL data is PHI until proven otherwise
-2. NEVER commit data files
-3. NEVER hardcode paths or credentials
-4. ALWAYS use environment variables
-5. Add comprehensive .gitignore before first commit
+1. Never store credentials in code
+2. Use environment variables for secrets
+3. Validate all user input
+4. Handle file paths safely
+5. Follow security best practices for the domain
 
 ---
 
@@ -70,18 +84,18 @@ Description: Variational Autoencoder for phoneme classification that learns voic
 
 ### Always Ask Before
 
-- Adding dependencies
-- Making architectural decisions
-- Optimizing code (prove it's slow first)
-- Creating abstractions
-- Deviating from patterns
+- Adding new dependencies
+- Changing core architecture
+- Modifying data structures
+- Adding complex features
+- Changing default behaviors
 
 ### How to Present Options
 
 "I see X approaches:
-
 - Option A: [approach] - Pros: [list] Cons: [list]
-- Option B: [approach] - Pros: [list] Cons: [list] Which aligns with your needs?"
+- Option B: [approach] - Pros: [list] Cons: [list]
+Which aligns with your needs?"
 
 ---
 
@@ -89,8 +103,8 @@ Description: Variational Autoencoder for phoneme classification that learns voic
 
 - [ ] Read PROJECT DETAILS section
 - [ ] Check recent changes in PROJECT LOG
-- [ ] Verify environment setup
-- [ ] Review any pending questions/tasks
+- [ ] Review any pending TODOs
+- [ ] Verify development environment
 
 ---
 
@@ -98,19 +112,19 @@ Description: Variational Autoencoder for phoneme classification that learns voic
 
 - [ ] Is this the simplest solution? (KISS)
 - [ ] Are we building only what's needed? (YAGNI)
-- [ ] Will this introduce bias or errors?
-- [ ] Any data security risks?
+- [ ] Does this follow project conventions?
+- [ ] Error handling comprehensive?
 - [ ] Have I presented alternatives?
 
 ---
 
 ## [COMMIT CHECKLIST]
 
-- [ ] Functions documented with types
-- [ ] Tests written for new code
-- [ ] No hardcoded paths/credentials
-- [ ] Ran `ruff check . --fix`
-- [ ] Ran `ruff format .`
+- [ ] Code follows project style
+- [ ] Functions/methods documented
+- [ ] Error messages are helpful
+- [ ] No hardcoded values
+- [ ] Tests pass (if applicable)
 - [ ] Updated PROJECT LOG
 - [ ] Commit message clear (no co-author references)
 
@@ -121,7 +135,7 @@ Description: Variational Autoencoder for phoneme classification that learns voic
 - [ ] Update PROJECT LOG with decisions
 - [ ] Note any unresolved questions
 - [ ] Document next steps
-- [ ] Clean up "Active Development Notes"
+- [ ] Add TODOs for incomplete work
 
 ---
 
@@ -129,10 +143,9 @@ Description: Variational Autoencoder for phoneme classification that learns voic
 
 ### Before EVERY Push
 
-1. **Sync claude.md to private repo**
-2. **Run**: `uv run pytest`
-3. **Run**: `uv run ruff check .`
-4. **Push**: `git push origin main` (be explicit)
+1. **Test core functions**: [project-specific test command]
+2. **Run linter**: [project-specific lint command]
+3. **Push**: `git push origin main`
 
 ### Commit Format
 
@@ -147,27 +160,36 @@ NO "Co-authored-by" tags ever.
 ### Required .gitignore Entries
 
 ```
-# Data files
-data/
-*.csv
-*.txt
-*.wav
-*.rhs
-*.pkl
-*.npy
-*.h5
-
-# Project meta
-claude.md
-CLAUDE.md
+# Environment
 .env
-configs/local/
+*.local
 
-# Results
-results/
-outputs/
-*.log
+# Dependencies
+[language-specific ignore patterns]
+
+# OS files
+.DS_Store
+Thumbs.db
 ```
+
+---
+
+## [TODO/FIXME GUIDELINES]
+
+When adding TODOs that should be tracked by pm tool:
+
+```python
+# TODO: Add error handling for API calls
+# TODO Add validation for user input
+# FIXME: This breaks when input is None
+# TODO - implement caching mechanism
+```
+
+Requirements:
+- Must be uppercase: `TODO` or `FIXME`
+- Must be in .py files within src/ directory
+- Common formats: `# TODO:`, `# TODO`, `# FIXME:`, inline comments
+- Also works in docstrings: `"""TODO: implement this method"""`
 
 ---
 
@@ -177,30 +199,22 @@ outputs/
 
 ### Project Sessions
 
-#### 2025-06-03 - Session 1: Project Setup & Claude Code Integration
+#### [DATE] - Session 1: Initial Setup
 
 **Decisions**:
+- [Key decisions made]
 
-- Updated CLAUDE.md with phoneme classification project specifics
-- Confirmed .gitignore already excludes outputs/runs directories
-- Project uses PyTorch VAE architecture with encoder/decoder for speaker-invariant phoneme classification
-
-**Alternatives Rejected**:
-
-- N/A (initial setup session)
+**Architecture Choices**:
+- [Technical choices and rationale]
 
 **Next Steps**:
-
-- [ ] Remove outputs/runs from git history to reduce repo size
-- [ ] Review project structure for potential refactoring needs
-- [ ] Add ruff formatting configuration if needed
+- [ ] [Immediate tasks]
 
 #### Active Development
 
 <!-- Current work - clean up when complete -->
-
-- Working on: Initial Claude Code setup and git history cleanup
-- Questions: None currently
+- Working on: [Current focus]
+- Questions: [Open questions]
 
 ---
 
@@ -209,12 +223,19 @@ outputs/
 ### Common Commands
 
 ```bash
-uv venv && uv pip install -e .
-uv run pytest
-uv run ruff check . --fix && uv run ruff format .
-git add . && git commit -m "type: message" && git push origin main
+# Development
+[project-specific commands]
+
+# Testing
+[test commands]
+
+# Deployment
+[deployment commands]
 ```
 
 ### Development Philosophy
 
-**KISS** > YAGNI > DRY Simple > Clever Explicit > Implicit Security > Everything
+**KISS** > YAGNI > DRY  
+Simple > Clever  
+Explicit > Implicit  
+Working > Perfect
