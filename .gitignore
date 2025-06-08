@@ -32,3 +32,5 @@ uv.lock
 # Ignore all files in the outputs directory but keep structure
 outputs/*
 !outputs/.gitkeep
+CLAUDE.md
+/claude_config
